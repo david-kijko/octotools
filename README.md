@@ -27,7 +27,7 @@
 
 
 ### News
-
+- **2026-04-06**: Excited to have our paper on OctoTools accepted at [ACL 2026](https://2026.aclweb.org/)! See you in San Diego!
 - **2025-07-22**: 📄 Added support for Ollama LLM. Now you can use any Ollama-supported models. Thanks [@yeahdongcn](https://github.com/yeahdongcn) for your contribution!
 - **2025-07-03**: 📄 Added support for LiteLLM LLM. Now you can use any LiteLLM-supported models. Thanks [@axion66](https://github.com/axion66) for your contribution!
 - **2025-06-25**: 📄 Added backend support for Azure OpenAI. Thanks [@sufiyan-ahmed](https://github.com/sufiyan-ahmed) for your contribution!
@@ -346,11 +346,11 @@ This project draws inspiration from several remarkable projects:
 
 ### Citation
 ```bibtex
-@article{lu2025octotools,
+@proceedings{lu2026octotools,
     title={OctoTools: An Agentic Framework with Extensible Tools for Complex Reasoning},
     author={Lu, Pan and Chen, Bowen and Liu, Sheng and Thapa, Rahul and Boen, Joseph and Zou, James},
-    journal = {arXiv preprint arXiv:2502.11271},
-    year={2025}
+    booktitle = {Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (ACL)},
+    year={2026}
 }
 ```
 
@@ -380,13 +380,13 @@ This project draws inspiration from several remarkable projects:
                 </a>
             </td>
             <td align="center">
-                <a href="https://rthapa84.github.io/">                    <img src="https://media.licdn.com/dms/image/v2/D5603AQFc9Bdg5VEPxQ/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1683671172066?e=1753920000&v=beta&t=Y7FAxD28U3xvEGaNee5or2xlB_tbWsKxqcSfZMIgN9E" width="100" alt="rthapa84"/>
+                <a href="https://rthapa84.github.io/">                    <img src="https://rthapa84.github.io/assets/img/prof_pic.jpg" width="100" alt="rthapa84"/>
                     <br />
                     <sub><b>Rahul Thapa</b></sub>
                 </a>
             </td>
             <td align="center">
-                <a href="https://tonyxia2001.github.io/">                    <img src="https://media.licdn.com/dms/image/v2/C5603AQFnnPx5RamWdw/profile-displayphoto-shrink_800_800/profile-displayphoto-shrink_800_800/0/1660326674599?e=1753920000&v=beta&t=XjibnBlLae70Yi7GmSu279l4FPfh0wSbCl08D_5QOWk" width="100" alt="rthapa84"/>
+                <a href="https://tonyxia2001.github.io/">                    <img src="https://tonyxia2001.github.io/img/photo.png" width="100" alt="tonyxia2001"/>
                     <br />
                     <sub><b>Tony Xia</b></sub>
                 </a>
