@@ -22,7 +22,7 @@ license-files = ["LICEN[CS]E*"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["octotools"]
+include = ["octotools*"]
 
 [tool.setuptools.dynamic]
 dependencies = {file = ["requirements.txt"]}
