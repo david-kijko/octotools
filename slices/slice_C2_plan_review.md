@@ -9,9 +9,9 @@
 ## Required reading (in order)
 
 1. `docs/superpowers/specs/2026-05-17-imagegen-toolcards-design.md` — defines the Branch C plan-review phase and two-round limit.
-2. `plan.md` §§3–8 — names solver insertion points, operator output, and open questions.
+2. `plan.md` §§3–8 plus `## Runtime contract (B/C branches)` — names solver insertion points, operator output, open questions, and wrapper-routed runtime requirements.
 3. `Gotchas.md` — GOTCHA-01 is mandatory because the benchmark path uses `tasks/solve.py`.
-4. `resources.md` — OpenAI `gpt-4o-mini`, `/imagegen`, and hephaestus2 runner references.
+4. `resources.md` — `/imagegen` and hephaestus2 runner references; use `plan.md` Runtime contract for the wrapper-routed model/env.
 5. `slices/README.md` — confirms C-2 follows C-1 on `exp/img-toolcards-adv-plan`.
 6. `octotools/solver.py` — package solver insertion point after `analyze_query` and before the main loop.
 7. `tasks/solve.py` — benchmark solver path used by the required smoke command; see GOTCHA-01.
@@ -95,7 +95,7 @@ The implementing agent must run this exact block and paste literal stdout in the
 set -euo pipefail
 cd /home/david/Projects/octotools-img-toolcards-adv-plan
 git diff --stat
-python tasks/solve.py --index 100 --task mathvista --data_file mathvista/data/data.json --llm_engine_name gpt-4o-mini --root_cache_dir mathvista/cache --output_json_dir mathvista/results/_smoke_c2 --output_types direct --enabled_tools "Relevant_Patch_Zoomer_Tool,Google_Search_Tool,Python_Code_Generator_Tool,Image_Captioner_Tool,Generalist_Solution_Generator_Tool" --max_time 600 | tee /tmp/octotools-c2-smoke.stdout
+FORGE_API_KEY=oauth-wrapper FORGE_API_BASE=http://127.0.0.1:4141/v1 /home/david/Projects/octotools-img-toolcards-adv-plan/.venv/bin/python tasks/solve.py --index 100 --task mathvista --data_file mathvista/data/data.json --llm_engine_name forge/gpt-5.4 --root_cache_dir mathvista/cache --output_json_dir mathvista/results/_smoke_c2 --output_types direct --enabled_tools "Relevant_Patch_Zoomer_Tool,Google_Search_Tool,Python_Code_Generator_Tool,Image_Captioner_Tool,Generalist_Solution_Generator_Tool" --max_time 600 | tee /tmp/octotools-c2-smoke.stdout
 python - <<'PY'
 import json, glob, os
 p='mathvista/results/_smoke_c2/output_100.json'

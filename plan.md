@@ -111,6 +111,38 @@ The parity matrix in [`docs/parity-matrix.md`](./docs/parity-matrix.md) names th
 
 ---
 
+## Runtime contract (B/C branches)
+
+All octotools LLM calls in this experiment route through the local
+`GPTAuthWrapper` at `http://127.0.0.1:4141/v1`. There is no raw
+`OPENAI_API_KEY` in this environment; the openai engine's `forge/`
+path is used as the OpenAI-compatible proxy.
+
+**Required env vars for every smoke and benchmark run:**
+
+```bash
+FORGE_API_KEY=oauth-wrapper   # any non-empty string; wrapper ignores
+FORGE_API_BASE=http://127.0.0.1:4141/v1
+```
+
+**Required model string:** `forge/gpt-5.4` (the engine strips the
+`forge/` prefix and sends `gpt-5.4` upstream). The wrapper exposes
+`gpt-5.4`, `gpt-5.4-medium`, `gpt-5.4-high`, `gpt-5.4-xhigh`, and
+several gpt-5.x-codex variants — see `curl http://127.0.0.1:4141/v1/models`.
+
+**Required python interpreter:** the per-worktree venv at
+`<worktree>/.venv/bin/python`. The bundled `vllm==0.8.5` requirement is
+unused and intentionally omitted from venvs to avoid a multi-GB install.
+
+**Apples-to-apples implication:** all three branches A/B/C run against
+`forge/gpt-5.4`; the spec's original `gpt-4o-mini-2024-07-18` pin is
+superseded by this contract. The benchmark verdict must record the
+actual model used.
+
+**Live wrapper probe before any benchmark:** `curl -sf
+http://127.0.0.1:4141/health` must return `"token_status":"valid"` and
+`"degraded":false`. If degraded or 404, abort and surface a Gotcha.
+
 ## 8. Open questions — see Gotchas.md
 
 | ID | Question | Why still open | Deciding slice |
