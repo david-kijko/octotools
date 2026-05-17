@@ -8,16 +8,36 @@ from PIL import Image
 from octotools.engine.factory import create_llm_engine
 from octotools.models.formatters import MemoryVerification, NextStep, QueryAnalysis
 from octotools.models.memory import Memory
+from octotools.models.toolbox_renderer import describe_toolbox_payload, get_toolbox_payload
 
 
 class Planner:
-    def __init__(self, llm_engine_name: str, toolbox_metadata: dict = None, available_tools: List = None, verbose: bool = False):
+    def __init__(self, llm_engine_name: str, toolbox_metadata: dict = None, available_tools: List = None, verbose: bool = False, toolbox_mode: str = "text"):
         self.llm_engine_name = llm_engine_name
         self.llm_engine_mm = create_llm_engine(model_string=llm_engine_name, is_multimodal=True)
         self.llm_engine = create_llm_engine(model_string=llm_engine_name, is_multimodal=False)
         self.toolbox_metadata = toolbox_metadata if toolbox_metadata is not None else {}
         self.available_tools = available_tools if available_tools is not None else []
         self.verbose = verbose
+        self.toolbox_mode = toolbox_mode
+
+    def _toolbox_payload(self):
+        return get_toolbox_payload(self.toolbox_metadata, self.available_tools, self.toolbox_mode)
+
+    def _prompt_input(self, prompt: str, site: str, image_info: Dict[str, Any] = None) -> List[Any]:
+        payload = self._toolbox_payload()
+        input_data = [prompt]
+        if isinstance(payload, list):
+            card_count = sum(1 for item in payload if isinstance(item, bytes))
+            print(f"planner.py::{site} tool card image attachment count={card_count}; multimodal payload enabled")
+            input_data.extend(payload)
+        if image_info:
+            try:
+                with open(image_info["image_path"], 'rb') as file:
+                    input_data.append(file.read())
+            except Exception as e:
+                print(f"Error reading image file: {str(e)}")
+        return input_data
     def get_image_info(self, image_path: str) -> Dict[str, Any]:
         image_info = {}
         if image_path and os.path.isfile(image_path):
@@ -51,13 +71,15 @@ class Planner:
 
     def analyze_query(self, question: str, image: str) -> str:
         image_info = self.get_image_info(image)
+        toolbox_payload = self._toolbox_payload()
+        toolbox_payload_description = describe_toolbox_payload(toolbox_payload)
 
         query_prompt = f"""
 Task: Analyze the given query with accompanying inputs and determine the skills and tools needed to address it effectively.
 
 Available tools: {self.available_tools}
 
-Metadata for the tools: {self.toolbox_metadata}
+Tool metadata: {toolbox_payload_description}
 
 Image: {image_info}
 
@@ -79,14 +101,7 @@ Your response should include:
 Please present your analysis in a clear, structured format.
 """
 
-        input_data = [query_prompt]
-        if image_info:
-            try:
-                with open(image_info["image_path"], 'rb') as file:
-                    image_bytes = file.read()
-                input_data.append(image_bytes)
-            except Exception as e:
-                print(f"Error reading image file: {str(e)}")
+        input_data = self._prompt_input(query_prompt, "analyze_query", image_info)
 
         self.query_analysis = self.llm_engine_mm(input_data, response_format=QueryAnalysis)
 
@@ -136,6 +151,8 @@ Please present your analysis in a clear, structured format.
         return context, sub_goal, tool_name
 
     def generate_next_step(self, question: str, image: str, query_analysis: str, memory: Memory, step_count: int, max_step_count: int) -> Any:
+        toolbox_payload = self._toolbox_payload()
+        toolbox_payload_description = describe_toolbox_payload(toolbox_payload)
         prompt_generate_next_step = f"""
 Task: Determine the optimal next step to address the given query based on the provided analysis, available tools, and previous steps taken.
 
@@ -148,7 +165,7 @@ Available Tools:
 {self.available_tools}
 
 Tool Metadata:
-{self.toolbox_metadata}
+{toolbox_payload_description}
 
 Previous Steps and Their Results:
 {memory.get_actions()}
@@ -206,11 +223,13 @@ Tool Name: Object_Detector_Tool
 
 Remember: Your response MUST end with the Context, Sub-Goal, and Tool Name sections, with NO additional content afterwards.
 """
-        next_step = self.llm_engine(prompt_generate_next_step, response_format=NextStep)
+        next_step = self.llm_engine_mm(self._prompt_input(prompt_generate_next_step, "generate_next_step"), response_format=NextStep)
         return next_step
 
     def verificate_context(self, question: str, image: str, query_analysis: str, memory: Memory) -> Any:
         image_info = self.get_image_info(image)
+        toolbox_payload = self._toolbox_payload()
+        toolbox_payload_description = describe_toolbox_payload(toolbox_payload)
 
         prompt_memory_verification = f"""
 Task: Thoroughly evaluate the completeness and accuracy of the memory for fulfilling the given query, considering the potential need for additional tool usage.
@@ -219,7 +238,7 @@ Context:
 Query: {question}
 Image: {image_info}
 Available Tools: {self.available_tools}
-Toolbox Metadata: {self.toolbox_metadata}
+Toolbox Metadata: {toolbox_payload_description}
 Initial Analysis: {query_analysis}
 Memory (tools used and results): {memory.get_actions()}
 
@@ -274,14 +293,7 @@ Conclusion: CONTINUE
 IMPORTANT: Your response MUST end with either 'Conclusion: STOP' or 'Conclusion: CONTINUE' and nothing else. Ensure your explanation thoroughly justifies this conclusion.
 """
 
-        input_data = [prompt_memory_verification]
-        if image_info:
-            try:
-                with open(image_info["image_path"], 'rb') as file:
-                    image_bytes = file.read()
-                input_data.append(image_bytes)
-            except Exception as e:
-                print(f"Error reading image file: {str(e)}")
+        input_data = self._prompt_input(prompt_memory_verification, "verificate_context", image_info)
 
         stop_verification = self.llm_engine_mm(input_data, response_format=MemoryVerification)
 

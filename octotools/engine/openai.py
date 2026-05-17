@@ -240,10 +240,11 @@ class ChatOpenAI(EngineLM, CachedEngine):
         for item in content:
             if isinstance(item, bytes):
                 base64_image = base64.b64encode(item).decode('utf-8')
+                media_type = "image/png" if item.startswith(b"\x89PNG\r\n\x1a\n") else "image/jpeg"
                 formatted_content.append({
                     "type": "image_url",
                     "image_url": {
-                        "url": f"data:image/jpeg;base64,{base64_image}"
+                        "url": f"data:{media_type};base64,{base64_image}"
                     }
                 })
             elif isinstance(item, str):

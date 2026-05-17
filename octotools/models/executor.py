@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from octotools.engine.factory import create_llm_engine
 from octotools.models.formatters import ToolCommand
+from octotools.models.toolbox_renderer import describe_toolbox_payload, get_toolbox_payload
 
 try:
     TimeoutError
@@ -19,13 +20,14 @@ def timeout_handler(signum, frame):
     raise TimeoutError("Function execution timed out")
 
 class Executor:
-    def __init__(self, llm_engine_name: str, root_cache_dir: str = "solver_cache",  num_threads: int = 1, max_time: int = 120, max_output_length: int = 100000, verbose: bool = False):
+    def __init__(self, llm_engine_name: str, root_cache_dir: str = "solver_cache",  num_threads: int = 1, max_time: int = 120, max_output_length: int = 100000, verbose: bool = False, toolbox_mode: str = "text"):
         self.llm_engine_name = llm_engine_name
         self.root_cache_dir = root_cache_dir
         self.num_threads = num_threads
         self.max_time = max_time
         self.max_output_length = max_output_length
         self.verbose = verbose
+        self.toolbox_mode = toolbox_mode
 
     def set_query_cache_dir(self, query_cache_dir):
         if query_cache_dir:
@@ -36,6 +38,8 @@ class Executor:
         os.makedirs(self.query_cache_dir, exist_ok=True)
 
     def generate_tool_command(self, question: str, image: str, context: str, sub_goal: str, tool_name: str, tool_metadata: Dict[str, Any]) -> Any:
+        toolbox_payload = get_toolbox_payload({tool_name: tool_metadata}, [tool_name], self.toolbox_mode)
+        toolbox_payload_description = describe_toolbox_payload(toolbox_payload)
         prompt_generate_tool_command = f"""
 Task: Generate a precise command to execute the selected tool based on the given information.
 
@@ -44,7 +48,7 @@ Image: {image}
 Context: {context}
 Sub-Goal: {sub_goal}
 Selected Tool: {tool_name}
-Tool Metadata: {tool_metadata}
+Tool Metadata: {toolbox_payload_description}
 
 Instructions:
 1. Carefully review all provided information: the query, image path, context, sub-goal, selected tool, and tool metadata.
@@ -137,8 +141,15 @@ Reason: The command should process multiple items in a single execution, not sep
 
 Remember: Your response MUST end with the Generated Command, which should be valid Python code including any necessary data preparation steps and one or more `execution = tool.execute(` calls, without any additional explanatory text. The format `execution = tool.execute` must be strictly followed, and the last line must begin with `execution = tool.execute` to capture the final output."""
 
-        llm_generate_tool_command = create_llm_engine(model_string=self.llm_engine_name, is_multimodal=False)
-        tool_command = llm_generate_tool_command(prompt_generate_tool_command, response_format=ToolCommand)
+        if isinstance(toolbox_payload, list):
+            card_count = sum(1 for item in toolbox_payload if isinstance(item, bytes))
+            print(f"executor.py::generate_tool_command tool card image attachment count={card_count}; multimodal payload enabled")
+            input_data = [prompt_generate_tool_command, *toolbox_payload]
+            llm_generate_tool_command = create_llm_engine(model_string=self.llm_engine_name, is_multimodal=True)
+            tool_command = llm_generate_tool_command(input_data, response_format=ToolCommand)
+        else:
+            llm_generate_tool_command = create_llm_engine(model_string=self.llm_engine_name, is_multimodal=False)
+            tool_command = llm_generate_tool_command(prompt_generate_tool_command, response_format=ToolCommand)
 
         return tool_command
 

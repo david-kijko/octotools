@@ -190,7 +190,8 @@ def construct_solver(llm_engine_name : str = "gpt-4o",
                      max_tokens : int = 4000,
                      root_cache_dir : str = "solver_cache",
                      verbose : bool = True,
-                     vllm_config_path : str = None):
+                     vllm_config_path : str = None,
+                     toolbox_mode: str = "text"):
     
     # Instantiate Initializer
     initializer = Initializer(
@@ -206,6 +207,7 @@ def construct_solver(llm_engine_name : str = "gpt-4o",
         toolbox_metadata=initializer.toolbox_metadata,
         available_tools=initializer.available_tools,
         verbose=verbose,
+        toolbox_mode=toolbox_mode,
     )
 
     # Instantiate Memory
@@ -216,6 +218,7 @@ def construct_solver(llm_engine_name : str = "gpt-4o",
         llm_engine_name=llm_engine_name,
         root_cache_dir=root_cache_dir,
         verbose=verbose,
+        toolbox_mode=toolbox_mode,
     )
 
     # Instantiate Solver
@@ -246,6 +249,7 @@ def parse_arguments():
     parser.add_argument("--max_steps", type=int, default=10, help="Maximum number of steps to execute.")
     parser.add_argument("--max_time", type=int, default=300, help="Maximum time allowed in seconds.")
     parser.add_argument("--verbose", type=bool, default=True, help="Enable verbose output.")
+    parser.add_argument("--toolbox_mode", default="text", choices=["text", "image"], help="Render toolbox metadata as text or PNG cards.")
     return parser.parse_args()
     
 def main(args):
@@ -256,7 +260,8 @@ def main(args):
                               max_time=args.max_time, 
                               max_tokens=args.max_tokens, 
                               root_cache_dir=args.root_cache_dir,
-                              verbose=args.verbose)
+                              verbose=args.verbose,
+                              toolbox_mode=args.toolbox_mode)
 
     # Solve the task or problem
     solver.solve("What is the capital of France?")

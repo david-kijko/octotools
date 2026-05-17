@@ -97,6 +97,10 @@ Stable exit codes:
 
 ## Verification gate (MANDATORY)
 
+### Scope decision for B-1
+
+For the B-1 implementation smoke, use **option (a), MathVista only**, at **index 100**. This honors the user's latest priority for a small, fast, cheap early delta signal while still exercising the benchmark path that matters for Branch B. Generate and commit **all eight** cards from the MathVista/MedQA/GAIA-Text enabled-tool union because card generation is a one-time setup cost and keeping the full inventory avoids rework before the eventual A/B/C run. The eventual early A/B/C comparison implied by this slice is **1 task × N chosen MathVista indices per branch** until the verdict runner broadens scope; with the smoke index only, that is **1 query per branch** for this gate.
+
 The implementing agent must run this exact block and paste literal stdout in the final report:
 
 ```bash

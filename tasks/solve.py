@@ -7,7 +7,7 @@ from typing import List, Dict, Any
 
 # Add the project root to the Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
+project_root = os.path.dirname(current_dir)
 sys.path.insert(0, project_root)
 
 from octotools.models.initializer import Initializer
@@ -329,6 +329,7 @@ def parse_arguments():
     parser.add_argument("--max_steps", type=int, default=10, help="Maximum number of steps to execute.")
     parser.add_argument("--max_time", type=int, default=300, help="Maximum time allowed in seconds.")
     parser.add_argument("--verbose", type=bool, default=True, help="Enable verbose output.")
+    parser.add_argument("--toolbox_mode", default="image", choices=["text", "image"], help="Render toolbox metadata as text or PNG cards.")
     return parser.parse_args()
 
 
@@ -347,6 +348,7 @@ def main(args):
         llm_engine_name=args.llm_engine_name,
         toolbox_metadata=initializer.toolbox_metadata,
         available_tools=initializer.available_tools,
+        toolbox_mode=args.toolbox_mode,
     )
 
     # Instantiate Memory
@@ -355,7 +357,8 @@ def main(args):
     # Instantiate Executor
     executor = Executor(
         llm_engine_name=args.llm_engine_name,
-        root_cache_dir=args.root_cache_dir
+        root_cache_dir=args.root_cache_dir,
+        toolbox_mode=args.toolbox_mode
     )
 
     # Instantiate Solver
