@@ -1,152 +1,86 @@
-# octotools — Implementation Slices
+# octotools Image-Toolcards Experiment — Implementation Slices
 
-<!-- Replace octotools with the target project or skill name at bootstrap time. -->
-1 placeholder testable slices that build `octotools` from scratch. Each slice is a
-self-contained brief intended to be handed to a single executing subagent or
-implementer process. Read this file once to understand the dependency shape,
-then work through `slice_<NN>_<shortname>.md` in graph order.
-<!-- Replace 1 placeholder with the final slice count. Replace <NN> / <shortname> with
-     the target repo's concrete slice ID and filename convention. -->
+Three testable slices tailor octotools for the image-toolcards experiment. Each slice is a self-contained brief for a hephaestus2 (gpt-5.5 high Codex) implementer. Read this manifest once, then execute `slice_B1_image_toolcards.md`, `slice_C1_runtime_wrappers.md`, and `slice_C2_plan_review.md` in graph order.
 
 ## Required reading (the harness — every slice agent reads these)
 
-1. **`plan.md`** — architecture, modules, surfaces
-2. **`Gotchas.md`** — empirical corrections to the docs; the agent MUST
-   respect these or the implementation will not work
-3. **`resources.md`** — first-party URLs
-4. **`docs/octotools-architecture.png.png`** — visual reference
-5. **`docs/octotools-implementation-path.png.png`** — visual rendering of this manifest
-6. **`docs/parity-matrix.md`** — operator-facing parity surface
-7. No extra slice-specific reference yet — bootstrap creates only the placeholder manifest row
+1. **`docs/superpowers/specs/2026-05-17-imagegen-toolcards-design.md`** — hypothesis, branch design, benchmark grid, non-goals.
+2. **`plan.md`** — architecture hooks, operator surface, and open questions.
+3. **`Gotchas.md`** — empirical contradictions; every slice must respect current GOTCHA entries.
+4. **`resources.md`** — verified primary URLs and local runner contracts.
+5. **`docs/octotools-architecture.png`** — generated architecture visual; do not regenerate.
+6. **`docs/octotools-implementation-path.png`** — generated dependency-path visual; do not regenerate.
+7. **`docs/parity-matrix.md`** — branch/benchmark parity surface.
 
-<!-- Replace octotools-architecture.png with the architecture diagram basename,
-     octotools-implementation-path.png with the dependency-path diagram basename,
-     and <slice-specific reference, if any> with either a real path or remove
-     the row when no extra reference is needed. -->
-
-Every future `slice_<NN>_<shortname>.md` adds its own slice-specific context on top.
+Each slice file adds slice-specific code references and verification gates on top.
 
 ## Dependency graph
 
-<!-- Replace this fenced block with ASCII art or a markdown diagram generated
-     from the manifest table below. Nodes are slice IDs; edges are "depends on"
-     relations; annotate independent gates and any intentionally bundled nodes. -->
-
+```text
+research/imagegen-toolcards
+          |
+          v
+[B-1 image tool cards]  ->  [C-1 runtime wrappers]  ->  [C-2 plan review]
+ exp/img-toolcards          exp/img-toolcards-adv-plan   exp/img-toolcards-adv-plan
 ```
-<dependency graph for octotools>
-```
 
-The slice executor parses this section together with the manifest table below
-to derive the topological order for unattended dispatch. Keep the graph, the
-`Depends on` column, and the concrete slice files synchronized.
-<!-- Replace <dependency graph for octotools> with a graph that preserves the
-     exact dependency topology selected during bootstrap. -->
+B-1 forks from `research/imagegen-toolcards`. C-1 forks from `exp/img-toolcards` after B-1 passes. C-2 continues on `exp/img-toolcards-adv-plan` after C-1 passes.
 
 ## Bundling
 
-Each slice has an independent verification gate. **None bundled by default.**
-A slice is bundled with another only when the operator records a written
-justification here because both slices share an unsplittable verification
-surface.
-<!-- If bootstrap discovers a required bundle, replace this paragraph with the
-     bundle ID(s), the slices included, and the single verification surface that
-     makes independent testing impossible. Otherwise leave "None bundled". -->
+None bundled. B-1, C-1, and C-2 each has an independent verification gate with literal stdout requirements. Do not combine C-1 and C-2: the runner wrappers must prove real `/imagegen` and hephaestus2 behavior before the solver consumes them.
 
 ## How to execute a slice
 
-The orchestrator walks the graph-derived topological order and dispatches one
-implementer per slice:
-
 ```bash
-# pseudo-orchestrator flow; replace placeholders during bootstrap
-order=$(parse_slices_readme_for_topological_order slices/README.md)
-for N in $order; do
-  brief=$(mktemp "/tmp/octotools-${N}.XXXXXX.md")
-  cat "slices/${N}_<shortname>.md" > "$brief"
-  HEPHAESTUS_MODEL=gpt-5.5 HEPHAESTUS_REASONING_EFFORT=high hephaestus --file "$brief" --dir "$(pwd)"
-  run the slice's Verification gate "$N" | tee ".octotools/runs/${N}.gate.stdout"
+set -euo pipefail
+cd /home/david/Projects/octotools
+for slice in B1 C1 C2; do
+  brief="slices/slice_${slice}_*.md"
+  tmp="$(mktemp "/tmp/octotools-${slice}.XXXXXX.md")"
+  cat $brief > "$tmp"
+  COMPLETION_GUARD_TASK_TYPE=gap_analysis \
+  HEPHAESTUS_MODEL=gpt-5.5 \
+  HEPHAESTUS_REASONING_EFFORT=high \
+  hephaestus --file "$tmp" --dir "$(pwd)" --dangerous
+  # Then run the slice's own Verification gate exactly as written in the brief.
 done
 ```
 
-<!-- Replace HEPHAESTUS_MODEL=gpt-5.5 HEPHAESTUS_REASONING_EFFORT=high hephaestus with the project-approved dispatch command
-     (for Simplement-shaped repos, the hephaestus2 wrapper); replace
-     run the slice's Verification gate with the harness command that runs the slice's gate;
-     replace octotools with the hidden state directory name. -->
-
-Each slice file ends with a **Verification gate** that the executing agent MUST
-pass with literal command output pasted before reporting success. The
-orchestrator only moves on after the gate passes.
+The orchestrator only advances after the slice gate passes and the branch is committed and pushed. For B-1 and C-2, benchmark smoke tests must inspect the actual `output_100.json` user-visible artifact. For C-1, the wrappers must create/read real runner outputs.
 
 ## Update protocol (every slice agent follows this)
 
-### Role-split policy
+Implementation must be authored by hephaestus2 (gpt-5.5 high Codex), not by the orchestrator. The orchestrator may draft briefs, dispatch lanes, monitor outputs, run verification, and merge reviewed work; it must not author source code or generated cards outside S00 harness documentation.
 
-Implementation must be authored by `hephaestus2 (gpt-5.5 high Codex)`, not by the
-orchestrator. The orchestrator may draft briefs, dispatch workers, monitor
-outputs, run verification, and merge reviewed work; it must not author source
-code, tests, or generated target harness files unless the project explicitly
-marks a scaffolding slice as orchestrator-owned.
-<!-- Replace hephaestus2 (gpt-5.5 high Codex) with the authorized implementer, e.g.
-     "hephaestus2 (gpt-5.5 high Codex)" for Simplement-shaped builds. -->
+If execution discovers a fact that invalidates the harness:
 
-If during execution the agent discovers a fact that **invalidates an assumption
-in the harness**, the agent must:
-
-1. **Stop** before completing the slice.
-2. **Append** a new `GOTCHA-NN` entry to `Gotchas.md` (newest first) per the
-   template at the top of that file.
-3. **Update** `plan.md` (any sections affected), `resources.md` (any new URLs),
-   and `docs/octotools-architecture.png.png` / `docs/octotools-implementation-path.png.png`
-   if the visual contract changes.
-4. **Re-run the failing step** with the harness updated.
-5. **Commit** harness changes on the slice branch BEFORE committing the slice's
-   code, so reviewers see the assumption shift first.
-6. **Note** the new GOTCHA-NN in the slice's PR/completion summary.
-
-<!-- Replace visual placeholders with the concrete diagram names. If a project
-     has a human-in-loop severity policy, add the pause/resume rule here. -->
-
-If the discovered fact does not invalidate the harness but is useful context,
-append it as an open probe or low-severity note in `Gotchas.md` instead.
+1. Stop before claiming the slice complete.
+2. Append a new `GOTCHA-NN` entry to `Gotchas.md`, newest first.
+3. Update `plan.md`, `resources.md`, `docs/parity-matrix.md`, or the relevant slice brief only where the gotcha affects that artifact.
+4. Do not regenerate `docs/octotools-architecture.png` or `docs/octotools-implementation-path.png` unless a future orchestrator explicitly requests diagram replacement.
+5. Commit harness corrections before implementation corrections on the slice branch.
+6. Mention every new Gotcha in the final report.
 
 ## Slice manifest
 
-| # | File | Title | Depends on | Bundled? | Verification gate |
-|---|---|---|---|---|---|
-| 01 | `slice_01_define-first-vertical.md` | Define the first vertical slice | — | no | slice brief exists and names a concrete verification gate |
-
-<!-- Add one row per slice. Replace <NN>, <shortname>, <title>, dependency
-     list, bundle status, and <one-line gate>. Keep this table's column shape:
-     # | File | Title | Depends on | Bundled? | Verification gate. -->
+| # | File | Title | Depends on | Bundled? | Target branch/worktree | Verification gate |
+|---|---|---|---|---|---|---|
+| B-1 | `slice_B1_image_toolcards.md` | Image tool cards and planner/executor wiring | — | no | `exp/img-toolcards` at `/home/david/Projects/octotools-img-toolcards` | Diff stat, PNG card validity, MathVista index 100 smoke, multimodal attachment stdout |
+| C-1 | `slice_C1_runtime_wrappers.md` | Runtime `/imagegen` and hephaestus2 subprocess wrappers | B-1 | no | `exp/img-toolcards-adv-plan` at `/home/david/Projects/octotools-img-toolcards-adv-plan` | Real PNG output from `imagegen_runner`; non-empty critique from `hephaestus2_runner` |
+| C-2 | `slice_C2_plan_review.md` | Plan-review loop before solver step execution | C-1 | no | `exp/img-toolcards-adv-plan` at `/home/david/Projects/octotools-img-toolcards-adv-plan` | Diff stat, MathVista index 100 smoke with `plan_review`, stdout round marker, diagram file evidence |
 
 ## Acceptance
 
-After the last slice passes, `octotools` is v1-complete. Any remaining
-limitations are documented in `docs/parity-matrix.md` and the architecture
-visual's known-limitations panel.
-<!-- Replace the acceptance sentence if the project has a named final gate,
-     e.g. "After S11 passes" or "After W10 passes". -->
+After C-2 passes, the implementation harness is ready for the 90-query A/B/C experiment and `verdict.md` generation. Any limitation that prevents apples-to-apples comparison must be documented in `Gotchas.md` and reflected in `docs/parity-matrix.md` before running the final grid.
 
 ## Branch convention
 
-`slice/<NN>-<shortname>`, merged to `main` with `--no-ff` after independent
-verification of each slice's gate.
-<!-- Replace the branch pattern if the project uses prefixed IDs such as S<NN>
-     or W<NN>. Preserve the --no-ff merge rule unless the operator records a
-     different repository policy. -->
-
-## The parity matrix is harness too
-
-`docs/parity-matrix.md` is the second-tier authoritative reference for
-operator-facing semantics. Every slice that adds or changes a CLI verb, harness
-file, dispatch behavior, event shape, or verification surface must check the
-matrix first; update an existing row's status/evidence or add a new row before
-reporting completion.
-<!-- Remove this section only when bootstrap records that the target has no
-     parity surface. Otherwise keep it as a harness requirement. -->
+- S00 harness work lands on `research/imagegen-toolcards`.
+- B-1 lands on `exp/img-toolcards` and pushes `origin/exp/img-toolcards`.
+- C-1 and C-2 land on `exp/img-toolcards-adv-plan` and push `origin/exp/img-toolcards-adv-plan`.
+- No implementation work lands directly on `main`.
 
 ## Implementation path diagram
 
-See `docs/octotools-implementation-path.png.png` for the visual rendering of the
-dependency graph above with verification-gate annotations per slice.
-<!-- Replace octotools-implementation-path.png with the concrete PNG basename. -->
+See [`docs/octotools-implementation-path.png`](../docs/octotools-implementation-path.png) for the generated visual rendering of the B-1 → C-1 → C-2 path.
