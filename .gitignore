@@ -182,3 +182,6 @@ examples/notebooks/local_model/*
 
 #Vscode settings
 .vscode/
+
+# Simplement bridge event stream (not a project artifact)
+.simplement/
