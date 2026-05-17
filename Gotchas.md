@@ -26,6 +26,18 @@ Living list of things that **were not what we expected** when building the octot
 
 ## Findings
 
+### GOTCHA-05 — Generalist solution tool rejects planner-generated `input_query` kwarg
+
+- **Date:** 2026-05-18
+- **Discovered via:** empirical probe
+- **Source:** B-1 smoke memory reported the literal runtime error: `Error in execute_tool_command: Generalist_Solution_Generator_Tool.execute() got an unexpected keyword argument 'input_query'`
+- **Symptom:** A benchmark smoke can exit through the normal octotools path while a generated tool command fails at execution time with an unexpected keyword argument.
+- **Root cause:** This is pre-existing upstream octotools behavior: the planner can generate a command containing `input_query`, but `Generalist_Solution_Generator_Tool.execute()` does not accept that keyword.
+- **Workaround / fix:** Treat it as an apples-to-apples gotcha for A/B/C comparisons until the planner schema or tool signature is fixed upstream; mention it in the eventual verdict rather than scoring it as a B-1 or C-1 regression.
+- **Affects:** `octotools/models/planner.py`, `octotools/models/executor.py`, `octotools/tools/generalist_solution_generator.py`, `tasks/solve.py`, eventual `verdict.md`
+- **Severity:** L3 medium
+- **Resolved:**
+
 ### GOTCHA-04 — Requested Simplement GitHub URL is not fetchable
 
 - **Date:** 2026-05-18
